@@ -302,7 +302,7 @@ export function DashboardPage() {
         ))}
       </div>
 
-      {/* â”€â”€ Charts Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* — Charts Row ——————————————————————————————————————————————————————————————————— */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
         {/* Revenue Area Chart */}
@@ -347,7 +347,7 @@ export function DashboardPage() {
                 tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`}
                 width={42}
               />
-              <Tooltip content={<RevenueTooltip />} />
+              <Tooltip content={RevenueTooltip} />
               <Area
                 type="monotone"
                 dataKey="revenue"
@@ -389,7 +389,7 @@ export function DashboardPage() {
                       <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
                     ))}
                   </Pie>
-                  <Tooltip content={<CategoryTooltip />} />
+                  <Tooltip content={CategoryTooltip} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
