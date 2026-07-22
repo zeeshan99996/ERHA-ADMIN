@@ -58,8 +58,9 @@ export default function AdminSidebar({
 
   const syncState = async () => {
     setRole(db.getUserRole());
-    const orders = await db.getOrders();
-    setPendingOrdersCount(orders.filter((o) => o.orderStatus === 'Pending').length);
+    const orders = (await db.getOrders()) || [];
+    const pending = Array.isArray(orders) ? orders.filter((o: any) => o?.orderStatus === 'Pending').length : 0;
+    setPendingOrdersCount(pending);
   };
 
   useEffect(() => {
@@ -219,3 +220,4 @@ export default function AdminSidebar({
     </aside>
   );
 }
+

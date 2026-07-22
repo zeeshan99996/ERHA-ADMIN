@@ -18,7 +18,7 @@ export function CouponsPage() {
     code: '', type: 'Percentage', value: '', minOrder: '', maxUsage: '', expiry: '', status: 'Active',
   });
 
-  const syncCoupons = async () => setCoupons(await db.getCoupons());
+  const syncCoupons = async () => setCoupons((await db.getCoupons()) || []);
 
   useEffect(() => {
     syncCoupons();
@@ -244,5 +244,6 @@ export function CouponsPage() {
     </div>
   );
 }
+
 
 

@@ -137,7 +137,7 @@ export function ProductsPage() {
   const syncProducts = async () => {
     setIsLoading(true);
     try {
-      setProducts(await db.getProducts());
+      setProducts((await db.getProducts()) || []);
     } finally {
       setIsLoading(false);
     }
@@ -700,5 +700,6 @@ export function ProductsPage() {
     </div>
   );
 }
+
 
 

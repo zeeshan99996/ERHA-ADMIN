@@ -44,7 +44,7 @@ export function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
-  const syncOrders = async () => setOrders(await db.getOrders());
+  const syncOrders = async () => setOrders((await db.getOrders()) || []);
 
   useEffect(() => {
     syncOrders();
@@ -270,5 +270,6 @@ export function OrdersPage() {
     </div>
   );
 }
+
 
 

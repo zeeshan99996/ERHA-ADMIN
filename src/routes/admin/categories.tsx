@@ -15,7 +15,7 @@ export function CategoriesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', slug: '', icon: ICONS[0] });
 
-  const syncCategories = async () => setCategories(await db.getCategories());
+  const syncCategories = async () => setCategories((await db.getCategories()) || []);
 
   useEffect(() => {
     syncCategories();
@@ -176,5 +176,6 @@ export function CategoriesPage() {
     </div>
   );
 }
+
 
 

@@ -228,9 +228,9 @@ export function DashboardPage() {
           db.getOrders(),
           db.getCustomers()
         ]);
-        setProducts(prods);
-        setOrders(ords);
-        setCustomersCount(custs.length);
+        setProducts(Array.isArray(prods) ? prods : []);
+        setOrders(Array.isArray(ords) ? ords : []);
+        setCustomersCount(Array.isArray(custs) ? custs.length : 0);
       } catch (err) {
         console.error('Failed to load dashboard data:', err);
       }
@@ -556,5 +556,6 @@ export function DashboardPage() {
     </div>
   )
 }
+
 
 
