@@ -62,14 +62,14 @@ const getCategoryChartData = (products: any[]) => {
   }
   
   const counts: Record<string, number> = {}
-  let total = 0
-  
-  (products || []).forEach(p => {
-    if (p.category) {
-      counts[p.category] = (counts[p.category] || 0) + 1
-      total++
+  let total = 0;
+  const safeProducts = Array.isArray(products) ? products : [];
+  safeProducts.forEach((p: any) => {
+    if (p && p.category) {
+      counts[p.category] = (counts[p.category] || 0) + 1;
+      total++;
     }
-  })
+  });
   
   if (total === 0) {
     return Object.entries(CATEGORY_COLORS).map(([name, color]) => ({
