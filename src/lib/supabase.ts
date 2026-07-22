@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Admin standalone — no asset import needed here
-
+const pzxImgUrl = "https://images.unsplash.com/photo-1592890288564-76628a30a657?w=600";
 // Read Supabase environment variables from import.meta.env
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
