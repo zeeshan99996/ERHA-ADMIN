@@ -44,16 +44,38 @@ class ErrorBoundary extends Component<Props, State> {
           )}
           <div style={{ display: 'flex', gap: 12 }}>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.getRegistrations().then((registrations) => {
+                    for (const r of registrations) r.unregister();
+                  });
+                }
+                if ('caches' in window) {
+                  caches.keys().then((names) => {
+                    for (const name of names) caches.delete(name);
+                  });
+                }
+                window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now();
+              }}
               style={{ padding: '10px 20px', borderRadius: 8, backgroundColor: '#6366f1', color: '#ffffff', border: 'none', fontWeight: 600, cursor: 'pointer' }}
             >
-              Refresh Page
+              Force Refresh & Update
             </button>
             <button
               onClick={() => {
                 localStorage.clear();
                 sessionStorage.clear();
-                window.location.reload();
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.getRegistrations().then((registrations) => {
+                    for (const r of registrations) r.unregister();
+                  });
+                }
+                if ('caches' in window) {
+                  caches.keys().then((names) => {
+                    for (const name of names) caches.delete(name);
+                  });
+                }
+                window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now();
               }}
               style={{ padding: '10px 20px', borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.1)', color: '#ffffff', border: 'none', fontWeight: 600, cursor: 'pointer' }}
             >
