@@ -34,9 +34,14 @@ class ErrorBoundary extends Component<Props, State> {
             <span style={{ fontSize: 28, color: '#f87171' }}>⚠️</span>
           </div>
           <h1 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 8px 0' }}>ERHA Admin Error</h1>
-          <p style={{ color: '#94a3b8', fontSize: 14, maxWidth: 500, margin: '0 0 24px 0', wordBreak: 'break-word' }}>
+          <p style={{ color: '#f87171', fontSize: 16, fontWeight: 600, maxWidth: 600, margin: '0 0 12px 0', wordBreak: 'break-word' }}>
             {String(this.state.error?.message || this.state.error)}
           </p>
+          {this.state.error?.stack && (
+            <pre style={{ color: '#94a3b8', fontSize: 11, maxWidth: 700, maxHeight: 200, overflow: 'auto', textAlign: 'left', backgroundColor: '#020617', padding: 12, borderRadius: 8, margin: '0 0 20px 0', whiteSpace: 'pre-wrap' }}>
+              {String(this.state.error.stack)}
+            </pre>
+          )}
           <div style={{ display: 'flex', gap: 12 }}>
             <button
               onClick={() => window.location.reload()}
