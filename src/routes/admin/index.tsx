@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import {
@@ -25,12 +25,6 @@ import {
 } from 'lucide-react'
 import { db } from '@/lib/supabase'
 
-export const Route = createFileRoute('/admin/')({
-  component: DashboardPage,
-})
-
-// â”€â”€â”€ Dynamic Chart Data Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 const getRevenueChartData = (orders: any[]) => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const result = []
@@ -41,7 +35,7 @@ const getRevenueChartData = (orders: any[]) => {
     const monthName = months[d.getMonth()]
     const yearVal = d.getFullYear()
     
-    const matchingOrders = orders.filter(o => {
+    const matchingOrders = (orders || []).filter(o => {
       const orderDate = new Date(o.date)
       return orderDate.getMonth() === d.getMonth() && orderDate.getFullYear() === yearVal && o.orderStatus !== 'Cancelled'
     })
@@ -70,7 +64,7 @@ const getCategoryChartData = (products: any[]) => {
   const counts: Record<string, number> = {}
   let total = 0
   
-  products.forEach(p => {
+  (products || []).forEach(p => {
     if (p.category) {
       counts[p.category] = (counts[p.category] || 0) + 1
       total++
@@ -92,15 +86,15 @@ const getCategoryChartData = (products: any[]) => {
   }))
 }
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 function formatPKR(n: number) {
+  if (!n) return 'Rs. 0'
   if (n >= 1_000_000) return `Rs. ${(n / 1_000_000).toFixed(2)}M`
   if (n >= 1_000) return `Rs. ${(n / 1_000).toFixed(0)}K`
   return `Rs. ${n.toLocaleString('en-PK')}`
 }
 
 function formatPKRFull(n: number) {
+  if (!n) return 'Rs. 0'
   return `Rs. ${n.toLocaleString('en-PK')}`
 }
 
