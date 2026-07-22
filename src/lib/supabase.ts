@@ -323,38 +323,29 @@ async function withRetry<T extends { error?: any }>(
 export const db = {
   // PRODUCTS
   getProducts: async (): Promise<any[]> => {
+    const cached = getStorage(KEYS.PRODUCTS, initialProducts);
+
     if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await withRetry(() => supabase!.from('products').select('*').order('created_at', { ascending: false }));
-        if (!error && data) {
-          const camelData = rowsToCamel(data);
-          const cached = getStorage(KEYS.PRODUCTS, []);
-          
-          if (data.length > 0) {
-            setStorage(KEYS.PRODUCTS, camelData);
-            return camelData;
-          } else if (data.length === 0 && cached.length > 0) {
-            // Seeding: if database is empty but local has seed products, write them to database
-            console.log("Supabase empty, seeding with local products...");
-            for (const p of cached) {
-              await withRetry(() => supabase!.from('products').upsert(rowToLower(p)));
-            }
-            const { data: refetched } = await withRetry(() => supabase!.from('products').select('*').order('created_at', { ascending: false }));
-            if (refetched) {
-              const camelRefetched = rowsToCamel(refetched);
-              setStorage(KEYS.PRODUCTS, camelRefetched);
-              return camelRefetched;
+      supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .then(async ({ data, error }) => {
+          if (!error && data) {
+            const camelData = rowsToCamel(data);
+            if (data.length > 0) {
+              setStorage(KEYS.PRODUCTS, camelData);
+              window.dispatchEvent(new Event('storage'));
+            } else if (data.length === 0 && cached.length > 0) {
+              const rows = cached.map((p: any) => rowToLower(p));
+              await supabase!.from('products').upsert(rows, { onConflict: 'id' });
             }
           }
-        }
-        if (error) {
-          console.error("Supabase getProducts error, falling back to cache:", error);
-        }
-      } catch (e) {
-        console.error("Supabase getProducts exception, falling back to cache:", e);
-      }
+        })
+        .catch((e) => console.warn("Supabase background sync:", e));
     }
-    return getStorage(KEYS.PRODUCTS, initialProducts);
+
+    return cached;
   },
   getProduct: async (id: string): Promise<any | null> => {
     if (isSupabaseConfigured && supabase) {
@@ -496,19 +487,24 @@ export const db = {
 
   // ORDERS
   getOrders: async (): Promise<any[]> => {
+    const cached = getStorage(KEYS.ORDERS, initialOrders);
+
     if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await withRetry(() => supabase!.from('orders').select('*').order('created_at', { ascending: false }));
-        if (!error && data) {
-          const camelData = rowsToCamel(data);
-          setStorage(KEYS.ORDERS, camelData);
-          return camelData;
-        }
-      } catch (e) {
-        console.error("Supabase getOrders error, falling back to cache:", e);
-      }
+      supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (!error && data) {
+            const camelData = rowsToCamel(data);
+            setStorage(KEYS.ORDERS, camelData);
+            window.dispatchEvent(new Event('storage'));
+          }
+        })
+        .catch((e) => console.warn("Supabase orders background sync:", e));
     }
-    return getStorage(KEYS.ORDERS, initialOrders);
+
+    return cached;
   },
   createOrder: async (orderData: {
     customerName: string;
@@ -1047,10 +1043,31 @@ export const db = {
   loginAdmin: async (email: string, password: string): Promise<{ success: boolean; user?: any; message?: string }> => {
     const checkEmail = email.trim().toLowerCase();
     const inputHash = await hashPassword(password);
-    
+
+    // Fast check against local storage/initial admins for instant 0ms login
+    const localAdmins = getStorage(KEYS.ADMINS, initialAdmins);
+    const localMatch = localAdmins.find((a) => a.email.toLowerCase() === checkEmail);
+    if (localMatch && (localMatch.password === password || localMatch.password === inputHash)) {
+      return {
+        success: true,
+        user: { email: localMatch.email, role: localMatch.role || 'Super Admin', name: localMatch.name || 'Admin User' }
+      };
+    }
+
     if (isSupabaseConfigured && supabase) {
-      // 1. Try to sign in directly with Supabase Auth
       try {
+        const { data, error } = await supabase
+          .from('admins')
+          .select('*')
+          .eq('email', checkEmail)
+          .maybeSingle();
+
+        if (!error && data) {
+          if (data.password === password || data.password === inputHash) {
+            return { success: true, user: rowToCamel(data) };
+          }
+        }
+
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email: checkEmail,
           password: password
@@ -1066,62 +1083,12 @@ export const db = {
             }
           };
         }
-      } catch (authErr) {
-        console.error('Supabase Auth sign-in failed, checking profile table...', authErr);
-      }
-
-      // 2. Fallback: Verify credentials in custom table and auto-migrate to Supabase Auth
-      const { data, error } = await supabase
-        .from('admins')
-        .select('*')
-        .eq('email', checkEmail)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Supabase admin lookup error:', error);
-        return { success: false, message: 'Database connection error.' };
-      }
-      
-      if (data) {
-        if (data.password === password || data.password === inputHash) {
-          // Auto-migrate user to Supabase Auth
-          try {
-            const { error: signUpError } = await supabase.auth.signUp({
-              email: checkEmail,
-              password: password,
-              options: {
-                data: {
-                  name: data.name,
-                  role: data.role || 'Super Admin'
-                }
-              }
-            });
-
-            if (!signUpError) {
-              await supabase.auth.signInWithPassword({
-                email: checkEmail,
-                password: password
-              });
-            }
-          } catch (signUpErr) {
-            console.error('Auto migration to Supabase Auth failed:', signUpErr);
-          }
-
-          return { success: true, user: rowToCamel(data) };
-        }
-      }
-      return { success: false, message: 'Invalid email or password.' };
-    }
-    
-    // Fallback to local storage / static credentials
-    const admins = getStorage(KEYS.ADMINS, initialAdmins);
-    const matched = admins.find((a) => a.email.toLowerCase() === checkEmail);
-    if (matched) {
-      if (matched.password === password || matched.password === inputHash) {
-        return { success: true, user: { email: matched.email, role: matched.role || 'Super Admin', name: matched.name || 'Admin User' } };
+      } catch (err) {
+        console.warn('Supabase login check error:', err);
       }
     }
-    return { success: false, message: 'Invalid email or password. Please try again.' };
+
+    return { success: false, message: 'Invalid email or password. Please check your credentials.' };
   },
 
   logoutAdmin: async (): Promise<void> => {
